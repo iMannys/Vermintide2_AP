@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from Options import (
-    OptionSet, Toggle, PerGameCommonOptions, DeathLink
+    OptionSet, Toggle, PerGameCommonOptions, DeathLink, Range, Choice
 )
 
 _campaign_types = {
@@ -21,7 +21,7 @@ class CampaignOptions(OptionSet):
     """Precise list of DLC campaigns to include as locations."""
     display_name = "DLC Campaigns"
     valid_keys = _campaign_types
-    default = frozenset()  # all off by default, matching the apworld
+    default = frozenset()  # all off by default
 
 
 class AddTomes(Toggle):
@@ -68,6 +68,40 @@ class ForgottenRelics(Toggle):
     display_name = "Forgotten Relics Weapons"
     default = 1
 
+_trap_types = {
+    "Trap: Spawn Monster",
+    "Trap: Spawn Horde",
+    "Trap: Spawn Patrol",
+    "Trap: Drop Firebomb",
+    "Trap: Empty Career Ability",
+}
+
+class TrapChance(Range):
+    """
+    Chance of traps in the item pool.
+
+    - **0:** No traps will be present
+    - **100:** Every filler item will be a trap.
+    """
+    display_name = "Trap Chance"
+    range_start = 0
+    range_end = 100
+    default = 10
+
+
+class TrapSelection(OptionSet):
+    """
+    Precise list of traps that may be in the item pool to find.
+    """
+    display_name = "Trap Selection"
+    valid_keys = _trap_types
+
+class Goal(Choice):
+    """The victory condition for the game."""
+    display_name = "Goal"
+    option_skittergate = 0
+    option_chaos_wastes = 1
+    default = 0
 
 @dataclass
 class Vermintide2Options(PerGameCommonOptions):
@@ -86,3 +120,8 @@ class Vermintide2Options(PerGameCommonOptions):
 
     # DLC campaign selection
     campaign: CampaignOptions
+
+    trap_chance: TrapChance
+    trap_selection: TrapSelection
+
+    goal: Goal
