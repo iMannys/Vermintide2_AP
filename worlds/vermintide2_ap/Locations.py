@@ -240,7 +240,7 @@ class Locations:
                         continue
 
                 location_table.append(
-                    MissionLocation(mission, loc_name, location_id))
+                    MissionLocation(mission, loc_name, location_id, self.state_logic))
                 location_id += 1
 
         return location_table
