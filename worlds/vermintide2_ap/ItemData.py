@@ -69,6 +69,8 @@ class ItemGroups(IntFlag):
     HuntsmanWeapon       = 1 << 40
     KruberSpear          = 1 << 41
 
+    PowerLevel           = 1 << 42
+
 @dataclass
 class ItemData:
     """

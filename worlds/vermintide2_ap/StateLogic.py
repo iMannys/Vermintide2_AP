@@ -71,8 +71,7 @@ class StateLogic:
                 self.has_lord_missions(state))
 
     def can_complete_citadel(self, state: CollectionState) -> bool:
-        return (self.has_item(state,
-                              "Expedition to the Citadel of Eternity") and
+        return (self.has_item(state, "Expedition to the Citadel") and
                 self.has_item(state, "Expedition of Fortitude") and
                 self.has_item(state, "Expedition of Courage") and
                 self.has_item(state, "Expedition of Determination"))
@@ -96,5 +95,24 @@ class StateLogic:
         [CollectionState], bool]:
         def rule(state: CollectionState) -> bool:
             return self.has_missions(state, count) or self.has_item(state, item)
+
+        return rule
+
+    def requires_mission(self, mission_name: str) -> Callable[
+        [CollectionState], bool]:
+        if mission_name == "The Skittergate":
+            def rule(state: CollectionState) -> bool:
+                return self.can_complete_skittergate(state)
+
+            return rule
+
+        if mission_name == "Expedition to the Citadel":
+            def rule(state: CollectionState) -> bool:
+                return self.can_complete_citadel(state)
+
+            return rule
+
+        def rule(state: CollectionState) -> bool:
+            return self.has_item(state, mission_name)
 
         return rule

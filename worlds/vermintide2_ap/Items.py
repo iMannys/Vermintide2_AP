@@ -1,6 +1,6 @@
 from typing import Dict, List, ClassVar, Optional, Sequence
 from BaseClasses import Item, ItemClassification
-from . import Vermintide2Options
+from .Options import Vermintide2Options
 from .ItemData import ItemData, ItemGroups
 from random import Random
 
@@ -62,6 +62,16 @@ class Items:
         "Grail Knight":                ItemData(ItemGroups.Career | ItemGroups.DLC, base_id + 52, ItemClassification.progression),
 
         # ----------------------------------------------------------
+        # Equipment Power Caps
+        # progression: gates access to higher-tier gear and harder content
+        # ----------------------------------------------------------
+        "Equipment Power Cap 100":     ItemData(ItemGroups.PowerLevel, base_id + 500, ItemClassification.progression),
+        "Equipment Power Cap 150":     ItemData(ItemGroups.PowerLevel, base_id + 501, ItemClassification.progression),
+        "Equipment Power Cap 200":     ItemData(ItemGroups.PowerLevel, base_id + 502, ItemClassification.progression),
+        "Equipment Power Cap 250":     ItemData(ItemGroups.PowerLevel, base_id + 503, ItemClassification.progression),
+        "Equipment Power Cap 300":     ItemData(ItemGroups.PowerLevel, base_id + 504, ItemClassification.progression),
+
+        # ----------------------------------------------------------
         # Traps
         # ----------------------------------------------------------
         "Trap: Spawn Monster":         ItemData(ItemGroups.Trap, base_id + 100, ItemClassification.trap, count=3),
@@ -91,16 +101,18 @@ class Items:
         # ----------------------------------------------------------
         "Righteous Stand":             ItemData(ItemGroups.Mission, base_id + 300, ItemClassification.progression),
         "Convocation of Decay":        ItemData(ItemGroups.Mission, base_id + 301, ItemClassification.progression),
-        "Hunger in the Dark":          ItemData(ItemGroups.Mission, base_id + 302, ItemClassification.progression),
-        "Against the Grain":           ItemData(ItemGroups.Mission, base_id + 303, ItemClassification.progression),
-        "Screaming Bell":              ItemData(ItemGroups.Mission, base_id + 304, ItemClassification.progression),
+        "Hunger in The Dark":          ItemData(ItemGroups.Mission, base_id + 302, ItemClassification.progression),
+        "Against The Grain":           ItemData(ItemGroups.Mission, base_id + 303, ItemClassification.progression),
+        "The Screaming Bell":          ItemData(ItemGroups.Mission, base_id + 304, ItemClassification.progression),
         "Athel Yenlui":                ItemData(ItemGroups.Mission, base_id + 305, ItemClassification.progression),
         "Festering Ground":            ItemData(ItemGroups.Mission, base_id + 306, ItemClassification.progression),
+        "Empire in Flames":            ItemData(ItemGroups.Mission, base_id + 307, ItemClassification.progression),
         # Lord missions
         "Halescourge":                 ItemData(ItemGroups.Mission, base_id + 310, ItemClassification.progression),
-        "Into the Nest":               ItemData(ItemGroups.Mission, base_id + 311, ItemClassification.progression),
+        "Into The Nest":               ItemData(ItemGroups.Mission, base_id + 311, ItemClassification.progression),
         "Fort Brachsenbrucke":         ItemData(ItemGroups.Mission, base_id + 312, ItemClassification.progression),
         "The Skittergate":             ItemData(ItemGroups.Mission, base_id + 313, ItemClassification.progression),
+        "The War Camp":                ItemData(ItemGroups.Mission, base_id + 314, ItemClassification.progression),
 
         # ----------------------------------------------------------
         # DLC Missions — Shadows Over Bogenhafen (free DLC)
@@ -126,7 +138,7 @@ class Items:
         # ----------------------------------------------------------
         "Old Haunts":                  ItemData(ItemGroups.Mission | ItemGroups.DLC | ItemGroups.DLC_Drachenfels,      base_id + 430, ItemClassification.progression),
         "Blood in the Darkness":       ItemData(ItemGroups.Mission | ItemGroups.DLC | ItemGroups.DLC_Drachenfels,      base_id + 431, ItemClassification.progression),
-        "The Enchanter's Lair":        ItemData(ItemGroups.Mission | ItemGroups.DLC | ItemGroups.DLC_Drachenfels,      base_id + 432, ItemClassification.progression),
+        "The Enchanters Lair":         ItemData(ItemGroups.Mission | ItemGroups.DLC | ItemGroups.DLC_Drachenfels,      base_id + 432, ItemClassification.progression),
 
         # ----------------------------------------------------------
         # DLC Missions — A Treacherous Adventure
@@ -282,7 +294,7 @@ class Items:
         cls.item_name_to_id = {name: data.code for name, data in cls.item_data.items()}
         cls.filler_items = tuple(
             item for item, details in cls.item_data.items()
-            if details.count > 0 and details.category & ItemGroups.Filler)
+            if details.category & ItemGroups.Filler)
 
     item_name_to_id: ClassVar[dict[str, int]] = {}
     filler_items: ClassVar[tuple[str, ...]] = ()
@@ -346,9 +358,59 @@ class Items:
             if item.name in self.item_data
         }
 
+        enabled_dlc: frozenset[str] = self.options.campaign.value
+
+        _dlc_flag_to_campaign: dict[ItemGroups, str] = {
+            ItemGroups.DLC_Bogenhafen:      "Shadows_Over_Bogenhafen",
+            ItemGroups.DLC_BackToUbersreik: "Back_to_Ubersreik",
+            ItemGroups.DLC_WindsOfMagic:    "Winds_of_Magic",
+            ItemGroups.DLC_Drachenfels:     "The_Curse_of_Drachenfels",
+            ItemGroups.DLC_Treachery:       "A_Treacherous_Adventure",
+            ItemGroups.DLC_KarakAzgaraz:    "Karak_Azgaraz",
+            ItemGroups.DLC_VerminousDreams: "Verminous_Dreams",
+            ItemGroups.DLC_ReiklandTales:   "Reikland_Tales",
+            ItemGroups.DLC_ChaosWastes:     "Chaos_Wastes",
+        }
+        campaign_dlc_flags = (ItemGroups.DLC_Bogenhafen | ItemGroups.DLC_BackToUbersreik |
+                              ItemGroups.DLC_WindsOfMagic | ItemGroups.DLC_Drachenfels |
+                              ItemGroups.DLC_Treachery | ItemGroups.DLC_KarakAzgaraz |
+                              ItemGroups.DLC_VerminousDreams | ItemGroups.DLC_ReiklandTales |
+                              ItemGroups.DLC_ChaosWastes)
+
         for item, details in self.item_data.items():
-            if self.options.add_weapon == 0 and details.category & ItemGroups.Weapon:
+            cat = details.category
+
+            # Traps are used only as dynamic filler, not fixed pool items
+            if cat & ItemGroups.Trap:
                 excluded_items.add(item)
+                continue
+
+            if cat & ItemGroups.Weapon:
+                if not self.options.add_weapon:
+                    excluded_items.add(item)
+                    continue
+                if cat & ItemGroups.DLC_BackToUbersreik and not self.options.back_to_ubersreik_weapons:
+                    excluded_items.add(item)
+                    continue
+                if cat & ItemGroups.DLC_WindsOfMagic and not self.options.winds_of_magic_weapons:
+                    excluded_items.add(item)
+                    continue
+                # Forgotten Relics: DLC weapons not tied to a specific campaign
+                if cat & ItemGroups.DLC and not (cat & campaign_dlc_flags) and not self.options.forgotten_relics:
+                    excluded_items.add(item)
+                    continue
+
+            # DLC careers excluded when dlc_careers is off
+            if cat & ItemGroups.Career and cat & ItemGroups.DLC and not self.options.dlc_careers:
+                excluded_items.add(item)
+                continue
+
+            # DLC missions excluded when their campaign is not enabled
+            if cat & ItemGroups.Mission and cat & ItemGroups.DLC:
+                for dlc_flag, campaign_key in _dlc_flag_to_campaign.items():
+                    if cat & dlc_flag and campaign_key not in enabled_dlc:
+                        excluded_items.add(item)
+                        break
 
         return excluded_items
 

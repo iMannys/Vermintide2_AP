@@ -1,6 +1,6 @@
 {
-	"game": "Warhammer Vermintide 2",
+	"game": "Warhammer: Vermintide 2",
+	"authors": ["iMannys"],
 	"minimum_ap_version": "0.6.7",
-	"world_version": "0.0.0",
-	"authors": ["iMannys"]
+	"world_version": "0.0.0"
 }
