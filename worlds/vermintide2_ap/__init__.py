@@ -1,5 +1,3 @@
-from random import Random
-
 from BaseClasses import Item
 from .Regions import create_regions
 from .StateLogic import StateLogic
@@ -7,7 +5,7 @@ from .Options import Vermintide2Options, Goal
 from .Items import Items
 from .Locations import Locations, LocationData
 from worlds.AutoWorld import World
-
+from . import Components
 
 class Vermintide2World(World):
     """
